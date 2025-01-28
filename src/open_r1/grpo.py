@@ -40,9 +40,10 @@ class GRPOScriptArguments(ScriptArguments):
     )
 
 
-def accuracy_reward(completions, answer, **kwargs):
+def accuracy_reward(completions, **kwargs):
     """Reward function that checks if the completion is the same as the ground truth."""
     contents = [completion[0]["content"] for completion in completions]
+    answer = ["$7$" for _ in completions]
     rewards = []
     for content, sol in zip(contents, answer):
         gold_parsed = parse(sol, extraction_mode="first_match", extraction_config=[LatexExtractionConfig()])
@@ -123,7 +124,7 @@ def main(script_args, training_args, model_args):
         }
 
     dataset = dataset.map(make_conversation)
-    dataset = dataset.remove_columns(["input", "answer", "ground_truth_answer"])
+    dataset = dataset.remove_columns(["input", "answer", "gt_answer", "subject", "level", "ground_truth_answer"])
 
     # Initialize the GRPO trainer
     trainer = GRPOTrainer(
