@@ -1,0 +1,37 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        
+        {
+            "name": "Run GRPO",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "src/open_r1/grpo.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--reward_funcs", "accuracy", "format",
+                "--dataset_name", "glue",
+                "--dataset_config", "mrpc",
+                "--dataset_train_split", "train",
+                "--dataset_test_split", "test",
+                "--model_name_or_path", "Qwen/Qwen2.5-7B-Instruct",
+                "--output_dir", "./output",
+                "--push_to_hub", "False",
+                "--per_device_train_batch_size", "1",
+                "--gradient_accumulation_steps", "16",
+                "--learning_rate", "2e-5",
+                "--num_train_epochs", "3",
+                "--eval_strategy", "steps",
+                "--eval_steps", "100",
+                "--lora_alpha", "16",
+                "--lora_dropout", "0.1",
+                "--lora_r", "8",
+                "--use_peft", "True",
+                "--load_in_8bit", "True"
+            ]
+        }
+    ]
+}

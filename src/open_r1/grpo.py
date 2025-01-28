@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from pathlib import Path
 import re
 from dataclasses import dataclass, field
 
@@ -21,6 +22,7 @@ from latex2sympy2_extended import NormalizationConfig
 from math_verify import LatexExtractionConfig, parse, verify
 from trl import GRPOConfig, GRPOTrainer, ModelConfig, ScriptArguments, TrlParser, get_peft_config
 
+BASE_DIR = Path(__file__).parent.parent.parent
 
 @dataclass
 class GRPOScriptArguments(ScriptArguments):
@@ -38,11 +40,11 @@ class GRPOScriptArguments(ScriptArguments):
     )
 
 
-def accuracy_reward(completions, solution, **kwargs):
+def accuracy_reward(completions, answer, **kwargs):
     """Reward function that checks if the completion is the same as the ground truth."""
     contents = [completion[0]["content"] for completion in completions]
     rewards = []
-    for content, sol in zip(contents, solution):
+    for content, sol in zip(contents, answer):
         gold_parsed = parse(sol, extraction_mode="first_match", extraction_config=[LatexExtractionConfig()])
         if len(gold_parsed) != 0:
             # We require the answer to be provided in correct latex (no malformed operators)
@@ -102,19 +104,26 @@ def main(script_args, training_args, model_args):
     reward_funcs = [reward_funcs_registry[func] for func in script_args.reward_funcs]
 
     # Load the dataset
-    dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
+    dataset = load_dataset(
+        "json",
+        data_files={
+            "train": str(BASE_DIR / "data/splits/train.json"),
+            "validation": str(BASE_DIR / "data/splits/validation.json"),
+            "test": str(BASE_DIR / "data/splits/test.json")
+        }
+    )
 
     # Format into conversation
     def make_conversation(example):
         return {
             "prompt": [
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": example["problem"]},
+                {"role": "user", "content": example["question"]},
             ],
         }
 
     dataset = dataset.map(make_conversation)
-    dataset = dataset.remove_columns("messages")
+    dataset = dataset.remove_columns(["input", "answer", "ground_truth_answer"])
 
     # Initialize the GRPO trainer
     trainer = GRPOTrainer(
